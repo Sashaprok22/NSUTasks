@@ -10,9 +10,8 @@ int main() {
     freopen("input.txt", "r", stdin);
     freopen("output.txt", "w", stdout);
 
-    int a = -10001, b = -10001;
+    int a, b;
     scanf("%d %d", &a, &b);
-    if (a < -10000 || b < -10000) return 0;
 
     double divResult = (double)a / (double)b;
     int divCeil = ceil(divResult);

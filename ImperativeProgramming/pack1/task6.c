@@ -5,18 +5,16 @@ int main() {
     freopen("input.txt", "r", stdin);
     freopen("output.txt", "w", stdout);
 
-    int count = -1;
+    int count;
     scanf("%d", &count);
-    if (count < 0) return 0;
 
     int nums[count];
     int maxNumberIndex = 0;
     int minNumberIndex = 0;
 
     for (int i = 0; i < count; ++i) {
-        int num  = 10001;
+        int num;
         scanf("%d", &num);
-        if (num > 10000) continue;
 
         nums[i] = num;
 

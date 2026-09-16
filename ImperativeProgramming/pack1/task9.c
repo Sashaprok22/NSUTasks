@@ -33,8 +33,8 @@ int main() {
     //     }
     // }
 
-    for (int a = 1; pow(a, 3) <= n; ++a) {
-        for (int b = a; a * pow(b, 2) <= n; ++b) {
+    for (int a = 1; a * a * a <= n; ++a) {
+        for (int b = a; a * b * b <= n; ++b) {
             int max_c = n / (a * b);
             answer += (max_c - b + 1);
         }
