@@ -1,0 +1,4 @@
+name,age,city
+Alice,23,London
+Bob,30,Paris
+Charlie,17,London
