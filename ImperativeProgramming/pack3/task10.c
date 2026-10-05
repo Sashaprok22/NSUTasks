@@ -1,85 +1,255 @@
 #include <stdio.h>
-#include <math.h>
+#include <stdlib.h>
 
-int max(int a, int b) {
+typedef long long ll;
+typedef __int128 i128;
+
+const ll SCALE = 1000000000LL;
+
+
+ll max(ll a, ll b) {
     return a > b ? a : b;
 }
 
-int getBitsCount(int n) {
+
+int getBitsCount(ll n) {
     int count = 0;
-    while (n > 0)
-    {
-        count += n % 2;
-        n /= 2;
+
+    while (n > 0) {
+        count += n & 1LL;
+        n >>= 1;
     }
+
     return count;
 }
 
-int getFixedMaxNum(int n, int needBites) {
-    int bites[32];
-    int bitesCount = 0;
-    while (n > 0) {
-        bites[bitesCount++] = n % 2;
-        n /= 2;
+ll getFixedMaxNum(ll n, int needBits) {
+    if (getBitsCount(n) <= needBits) {
+        return n;
     }
 
-    int counter = 0;
-    int result = 0;
-    for (int i = bitesCount - 1; i >= 0; --i) {
-        int bit = bites[i];
-        if (bit == 1) ++counter;
+    ll result = 0;
+    int count = 0;
 
-        result += bit * pow(2, i);
-        if (counter >= needBites) break;
+    for (int bit = 62; bit >= 0; --bit) {
+        if ((n >> bit) & 1LL) {
+            if (count < needBits) {
+                result |= 1LL << bit;
+                ++count;
+            }
+        }
     }
 
     return result;
 }
 
-int getFixedMinNum(int n, int needBites) {
-    int bites[32];
-    int bitesCount = 0;
-    while (n > 0) {
-        bites[bitesCount++] = n % 2;
-        n /= 2;
+ll getFixedMinNum(ll n, int needBits) {
+    if (getBitsCount(n) <= needBits) {
+        return n;
     }
 
-    int counter = 0;
-    int result = 0;
-    for (int i = bitesCount - 1; i >= 0; --i) {
-        int bit = bites[i];
-        if (bit == 1) ++counter;
+    for (int bit = 0; bit < 63; ++bit) {
 
-        if (counter >= needBites - 1 && bit == 0) {
-            bit = 1;
-            result += pow(2, i);
+        if (((n >> bit) & 1LL) == 0) {
+
+            ll upper = n >> (bit + 1);
+
+            if (getBitsCount(upper) + 1 <= needBits) {
+
+                ll result = upper << (bit + 1);
+
+                result |= 1LL << bit;
+
+                return result;
+            }
+        }
+    }
+
+    return 0;
+}
+
+void getParts(ll totalFly, int exists, ll *parts) {
+    ll number = totalFly + 1;
+
+    int count = 0;
+
+    for (int bit = 0; bit < 63; ++bit) {
+        if ((number >> bit) & 1LL) {
+            parts[count++] = 1LL << bit;
+        }
+    }
+
+    int i = 0;
+
+    while (count < exists + 1) {
+
+        if (parts[i] == 1) {
+            ++i;
+            continue;
+        }
+
+        parts[i] /= 2;
+
+        parts[count] = parts[i];
+
+        ++count;
+    }
+}
+
+void getFlyPositions(
+    i128 *result,
+    int exists,
+    ll len,
+    ll totalFly,
+    ll flyWidth
+) {
+    ll *parts =
+        malloc((exists + 1) * sizeof(ll));
+
+    getParts(totalFly, exists, parts);
+
+    i128 remaining =
+        (i128)(len - totalFly * flyWidth) * SCALE;
+
+    i128 position = 0;
+
+    for (int i = 0; i <= exists; ++i) {
+
+        i128 gap =
+            (i128)(parts[i] - 1)
+            * flyWidth
+            * SCALE;
+
+        i128 capacity =
+            (i128)parts[i]
+            * flyWidth
+            * SCALE
+            - 1;
+
+        i128 add;
+
+        if (remaining < capacity) {
+            add = remaining;
+        } else {
+            add = capacity;
+        }
+
+        gap += add;
+        remaining -= add;
+
+        if (i == exists) {
             break;
         }
 
-        result += bit * pow(2, i);
+        position += gap;
+
+        result[i] =
+            position
+            + (i128)flyWidth * SCALE / 2;
+
+        position +=
+            (i128)flyWidth * SCALE;
     }
 
-    return result;
+    free(parts);
 }
 
-int main() {
+void printPosition(i128 position) {
+    ll integerPart =
+        (ll)(position / SCALE);
+
+    ll fractionalPart =
+        (ll)(position % SCALE);
+
+    printf(
+        "%lld.%09lld\n",
+        integerPart,
+        fractionalPart
+    );
+}
+
+
+int main(void) {
     freopen("input.txt", "r", stdin);
     freopen("output.txt", "w", stdout);
 
-    int existsFly, widthFly, stickLen;
-    scanf("%d %d\n%d", &existsFly, &widthFly, &stickLen);
+    int existsFly;
+
+    ll widthFly;
+    ll stickLen;
+
+    scanf(
+        "%d %lld",
+        &existsFly,
+        &widthFly
+    );
+
+    scanf(
+        "%lld",
+        &stickLen
+    );
 
 
-    // Физические ограничения палочки, чтобы мухи не наглели
-    int heuristicMin = max((stickLen + widthFly) / (2 * widthFly), existsFly);
-    int heuristicMax = stickLen / widthFly;
+    ll heuristicMin =
+        (stickLen + widthFly)
+        / (2 * widthFly);
 
-    int minFly = heuristicMin;
-    if (getBitsCount(heuristicMin) > existsFly) minFly = getFixedMinNum(heuristicMin, existsFly);
+    heuristicMin =
+        max(heuristicMin, existsFly);
 
-    int maxFly = getFixedMaxNum(heuristicMax, existsFly);
+    ll heuristicMax =
+        stickLen / widthFly;
 
-    printf("%d %d", minFly, maxFly);
+    ll minFly =
+        getFixedMinNum(
+            heuristicMin + 1,
+            existsFly + 1
+        ) - 1;
+
+    ll maxFly =
+        getFixedMaxNum(
+            heuristicMax + 1,
+            existsFly + 1
+        ) - 1;
+
+
+    printf(
+        "%lld %lld\n",
+        minFly,
+        maxFly
+    );
+
+
+    i128 *positions =
+        malloc(existsFly * sizeof(i128));
+
+
+    getFlyPositions(
+        positions,
+        existsFly,
+        stickLen,
+        minFly,
+        widthFly
+    );
+
+    for (int i = 0; i < existsFly; ++i) {
+        printPosition(positions[i]);
+    }
+
+    getFlyPositions(
+        positions,
+        existsFly,
+        stickLen,
+        maxFly,
+        widthFly
+    );
+
+    for (int i = 0; i < existsFly; ++i) {
+        printPosition(positions[i]);
+    }
+
+
+    free(positions);
 
     return 0;
 }
