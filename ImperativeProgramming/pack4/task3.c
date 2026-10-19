@@ -19,11 +19,12 @@ int main() {
     int wordsCount;
     scanf("%d", &wordsCount);
 
-    char *result = {'\0'};
+    char *result = NULL;
     for (int i = 0; i < wordsCount; ++i) {
         char word[101];
         scanf("%s", word);
-        int newSize = sizeof(char) * (strlen(word) + strlen(result) + 1);
+        int oldLen = result == NULL ? 0 : strlen(result);
+        int newSize = sizeof(char) * (strlen(word) + oldLen + 1);
         result = realloc(result, newSize);
         result = concat(result, word);
     }
