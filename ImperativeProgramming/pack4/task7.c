@@ -26,10 +26,11 @@ int main() {
     int wordsCount = 0;
     char *words[100];
 
-    char *word = malloc(sizeof(char) * 101);
+    char word[101];
     while(scanf("%s ", word) > 0) {
-        words[wordsCount++] = word;
-        word = malloc(sizeof(char) * 101);
+        words[wordsCount] = malloc((strlen(word) + 1) * sizeof(char));
+        strcpy(words[wordsCount], word);
+        ++wordsCount;
     }
 
     for (int i = wordsCount - 1; i >= 0; --i) {

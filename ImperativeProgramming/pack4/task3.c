@@ -19,8 +19,7 @@ int main() {
     int wordsCount;
     scanf("%d", &wordsCount);
 
-    char *result = malloc(sizeof(char));
-    result[0] = '\0';
+    char *result = {'\0'};
     for (int i = 0; i < wordsCount; ++i) {
         char word[101];
         scanf("%s", word);
