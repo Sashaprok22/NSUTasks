@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <inttypes.h>
+#include <stdlib.h>
 
 typedef struct Pixel_s {
     uint8_t r;
@@ -20,11 +21,6 @@ Pixel readPixel(uint8_t depth) {
     fread(&pixel.r, sizeof(uint8_t), 1, stdin);
     if (depth == 32) fread(&pixel.a, sizeof(uint8_t), 1, stdin);
 
-    return pixel;
-}
-
-Pixel copyPixel(Pixel oldPixel) {
-    Pixel pixel = {oldPixel.r, oldPixel.g, oldPixel.b, oldPixel.a};
     return pixel;
 }
 
@@ -51,7 +47,7 @@ int main() {
     fread(&posX, sizeof(posX), 1, stdin);
 
     uint16_t posY;
-    fread(&posX, sizeof(posX), 1, stdin);
+    fread(&posY, sizeof(posY), 1, stdin);
 
     uint16_t width;
     fread(&width, sizeof(width), 1, stdin);
@@ -63,8 +59,9 @@ int main() {
     uint8_t descriptor = fgetc(stdin);
 
     // ID
-    char id[idLen];
-    if (idLen > 0) fread(id, sizeof(char), idLen, stdin);
+    // char id[idLen];
+    // if (idLen > 0) fread(id, sizeof(char), idLen, stdin);
+    fseek(stdin, idLen, SEEK_CUR);
 
     if (colorMapType) {
         int bytes = colorMapLen * min(colorMapElementSize / 3, 8);
@@ -74,26 +71,23 @@ int main() {
     // Чтение пикселей
     int totalPixels = width * height;
     int cursor = 0;
-    Pixel pixels[totalPixels];
+    Pixel *pixels = malloc(totalPixels * sizeof(Pixel));
     while (cursor < totalPixels) {
         switch (imageType) {
             case 2:
-                pixels[++cursor] = readPixel(depth);
+                pixels[cursor++] = readPixel(depth);
                 break;
 
             case 10:
                 uint8_t control = fgetc(stdin);
-                int isRepeatPacket = (control & 0x80) == 0x80;
-                int count = control & 0x7F;
-                pixels[++cursor] = readPixel(depth);
+                int isRepeatPacket = (control & 0x80) != 0;
+                int count = (control & 0x7F) + 1;
 
-                for (int i = 0; i < count; ++i) {
-                    if (isRepeatPacket) {
-                        ++cursor;
-                        pixels[cursor] = copyPixel(pixels[cursor-1]);
-                    } else {
-                        pixels[++cursor] = readPixel(depth);
-                    }
+                if (isRepeatPacket) {
+                    Pixel pixel = readPixel(depth);
+                    for (int i = 0; i < count; ++i) pixels[cursor++] = pixel;
+                } else {
+                    for (int i = 0; i < count; ++i) pixels[cursor++] = readPixel(depth);
                 }
 
                 break;
@@ -107,7 +101,7 @@ int main() {
     fwrite("BM", sizeof(char), 2, stdout);
 
     int rowSize = width * 3;
-    int padding = padding = (4 - (rowSize % 4)) % 4;
+    int padding = (4 - (rowSize % 4)) % 4;
     int pixelsDataSize = (rowSize + padding) * height;
     uint32_t totalBMPSize = 26 + pixelsDataSize;
     fwrite(&totalBMPSize, sizeof(totalBMPSize), 1, stdout);
@@ -130,10 +124,20 @@ int main() {
     uint16_t bcBitCount = 24;
     fwrite(&bcBitCount, sizeof(bcBitCount), 1, stdout);
 
-    for (int i = 0; i < totalPixels; ++i) {
-        fwrite(&pixels[i].b, sizeof(uint8_t), 1, stdout);
-        fwrite(&pixels[i].g, sizeof(uint8_t), 1, stdout);
-        fwrite(&pixels[i].r, sizeof(uint8_t), 1, stdout);
+    int isTopDown = (descriptor & 0x20) != 0;
+    int isRightLeft = (descriptor & 0x10) != 0;
+
+    for (int line = 0; line < height; ++line) {
+        int formattedLine = isTopDown ? (height - line - 1) : line;
+        for (int col = 0; col < width; ++col) {
+            int formattedCol = isRightLeft ? (width - col - 1) : col;
+            int i = formattedLine * width + formattedCol;
+            fwrite(&pixels[i].b, sizeof(uint8_t), 1, stdout);
+            fwrite(&pixels[i].g, sizeof(uint8_t), 1, stdout);
+            fwrite(&pixels[i].r, sizeof(uint8_t), 1, stdout);
+        }
+
+        for (int p = 0; p < padding; ++p) fputc(0, stdout);
     }
 
     return 0;
