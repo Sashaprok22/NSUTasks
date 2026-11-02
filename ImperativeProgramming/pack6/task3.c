@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 
+typedef union Value_s {
+    long long longVal;
+    double doubleVal;
+} Value;
+
+
 int main() {
     freopen("input.txt", "r", stdin);
     freopen("output.txt", "w", stdout);
@@ -13,15 +19,11 @@ int main() {
         long long m;
         scanf("%d/%d xor %llx", &p, &q, &m);
 
-        double current = (double)p / (double)q;
-        long long bytes;
-        memcpy(&bytes, &current, sizeof(double));
-        bytes ^= m;
+        Value val;
+        val.doubleVal = (double)p / (double)q;
+        val.longVal ^= m;
 
-        double result;
-        memcpy(&result, &bytes, sizeof(double));
-
-        printf("%0.15g\n", result);
+        printf("%0.15g\n", val.doubleVal);
     }
     return 0;
 }

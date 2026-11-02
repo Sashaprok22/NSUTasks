@@ -8,7 +8,7 @@ typedef struct Node {
 } Node;
 
 Node *getNode(double *value) {
-    return (Node*)((char *)value - offsetof(Node, value));
+    return (Node*)((char *)value - sizeof(Node*) * 2);
 }
 
 // создаёт пустой список
