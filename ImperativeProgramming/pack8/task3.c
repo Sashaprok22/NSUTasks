@@ -59,24 +59,24 @@ void checkWord(char *word, int indentLen, char indent) {
     if (currentCmd == 0) {
         printf("#include <stdio.h>\n");
 
-        printIndent(indent, indentLen);
+        //printIndent(indent, indentLen);
         printf("#include <stdlib.h>\n");
 
-        printIndent(indent, indentLen);
+        //printIndent(indent, indentLen);
         printf("#include <memory.h>\n");
 
-        printIndent(indent, indentLen);
+        //printIndent(indent, indentLen);
         printf("#include <ctype.h>\n");
 
-        printIndent(indent, indentLen);
+        //printIndent(indent, indentLen);
         printf("#include <math.h>\n");
 
-        printIndent(indent, indentLen);
+        //printIndent(indent, indentLen);
         printf("#include <string.h>");
     } else if (currentCmd == 1) {
         printf("freopen(\"input.txt\", \"r\", stdin);\n");
-        printIndent(indent, indentLen);
-        printf("freopen(\"output.txt\", \"w\", stdout);");
+        //printIndent(indent, indentLen);
+        printf("    freopen(\"output.txt\", \"w\", stdout);");
 
     } else if (currentCmd == 2) {
         printf("__auto_type");
