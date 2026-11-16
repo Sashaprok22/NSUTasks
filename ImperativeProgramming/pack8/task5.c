@@ -2,11 +2,16 @@
 #include <stdlib.h>
 
 int binarySearch(int *arr, int start, int arrLen, int n) {
-    if (start >= arrLen) return start;
+    int left = 0;
+    int right = arrLen - 1;
 
-    int pivotI = (start + arrLen) / 2;
-    if (arr[pivotI] < n) return binarySearch(arr, pivotI + 1, arrLen, n);
-    else return binarySearch(arr, start, pivotI, n);
+    while (left < right) {
+        int pivotI = left + (right - left) / 2;
+        if (arr[pivotI] < n) left = pivotI + 1;
+        else right = pivotI;
+    }
+
+    return left;
 }
 
 int main() {
