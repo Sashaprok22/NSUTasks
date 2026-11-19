@@ -44,14 +44,9 @@ minus:
 	push r2
 	push r3
 	
-	if
-		cmp r0, r2
-	is lo
-		dec r1
-	fi
-	
+	not r3
 	sub r0, r2
-	sub r1, r3
+	addc r1, r3
 	
 	move r2, r0
 	move r3, r1

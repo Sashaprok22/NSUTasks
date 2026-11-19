@@ -29,19 +29,19 @@ void sortArrayByKeys(Element **arr, int size)
     Element **from = arr;
     Element **to = output;
 
-    for (int shift = 0; shift < 64; shift += 8)
+    for (int shift = 0; shift < 64; shift += 16)
     {
-        int count[0xFF + 1] = {0};
+        int count[0xFFFF + 1] = {0};
 
         for (int i = 0; i < size; ++i)
         {
-            int digit = (from[i]->key >> shift) & 0xFF;
+            int digit = (from[i]->key >> shift) & 0xFFFF;
             ++count[digit];
         }
 
         int position = 0;
 
-        for (int i = 0; i <= 0xFF; ++i)
+        for (int i = 0; i <= 0xFFFF; ++i)
         {
             int temp = count[i];
             count[i] = position;
@@ -50,7 +50,7 @@ void sortArrayByKeys(Element **arr, int size)
 
         for (int i = 0; i < size; ++i)
         {
-            int digit = (from[i]->key >> shift) & 0xFF;
+            int digit = (from[i]->key >> shift) & 0xFFFF;
             to[count[digit]++] = from[i];
         }
 
@@ -96,7 +96,7 @@ int main()
         uint64_t hash = 5381;
         for (int i = 0; i < arrSize; i++)
             hash = hash * (uint64_t)31 + (uint64_t)arr[i]->value;
-        printf("%0.16" PRIx64 "\n", hash);
+        printf("%016" PRIx64 "\n", hash);
     }
 
     return 0;
