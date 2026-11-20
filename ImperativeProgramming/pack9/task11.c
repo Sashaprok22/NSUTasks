@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <inttypes.h>
+#include <stdlib.h>
 
 #define MAX_ELEMENTS 1000000
+#define THRESHOLD 64
 
 typedef struct Element_s {
     uint64_t key;
@@ -9,8 +11,8 @@ typedef struct Element_s {
 } Element;
 
 Element elements[MAX_ELEMENTS];
-Element *arr[MAX_ELEMENTS];
-Element *output[MAX_ELEMENTS];
+Element output[MAX_ELEMENTS];
+uint32_t positions[MAX_ELEMENTS];
 
 uint64_t xorshift128plus(uint64_t state[2]) {
     uint64_t x = state[0];
@@ -21,34 +23,64 @@ uint64_t xorshift128plus(uint64_t state[2]) {
     return state[1] + y;
 }
 
-void sortArrayByKeys(Element **arr, int size) {
-    Element **from = arr;
-    Element **to = output;
+void insertSortArrayByKeys(Element *arr, int size) {
+    for (int i = 1; i < size; ++i) {
+        Element temp = arr[i];
+        int j = i;
 
-    for (int shift = 0; shift < 64; shift += 16) {
-        int count[0xFFFF + 1] = {0};
-
-        for (int i = 0; i < size; ++i) {
-            int digit = (from[i]->key >> shift) & 0xFFFF;
-            ++count[digit];
+        while (j > 0 && arr[j - 1].key > temp.key) {
+            arr[j] = arr[j - 1];
+            --j;
         }
 
-        int position = 0;
+        arr[j] = temp;
+    }
+}
 
-        for (int i = 0; i <= 0xFFFF; ++i) {
-            int temp = count[i];
-            count[i] = position;
-            position += temp;
-        }
+int compareElements(const void *a, const void *b) {
+    const Element *arg1 = (const Element *)a;
+    const Element *arg2 = (const Element *)b;
 
-        for (int i = 0; i < size; ++i) {
-            int digit = (from[i]->key >> shift) & 0xFFFF;
-            to[count[digit]++] = from[i];
-        }
+    if (arg1->key < arg2->key) return -1;
+    if (arg1->key > arg2->key) return 1;
+    return 0;
+}
 
-        Element **temp = from;
-        from = to;
-        to = temp;
+void sortArrayByKeys(Element *from, Element *to, int size) {
+    int blockBits = 16;
+    int blocksCount = 1 << blockBits;
+    int shift = 62 - blockBits;
+    for (int i = 0; i < blocksCount; ++i) positions[i] = 0;
+
+    for (int i = 0; i < size; ++i) {
+        int block = from[i].key >> shift;
+        ++positions[block];
+    }
+
+    int start = 0;
+    for (int i = 0; i < blocksCount; ++i) {
+        int count = positions[i];
+        positions[i] = start;
+        start += count;
+    }
+
+    for (int i = 0; i < size; ++i) {
+        Element temp = from[i];
+        int block = temp.key >> shift;
+
+        to[positions[block]++] = temp;
+    }
+
+    int begin = 0;
+
+    for (int i = 0; i < blocksCount; ++i) {
+        int end = positions[i];
+        int len = end - begin;
+
+        if (len <= THRESHOLD) insertSortArrayByKeys(to + begin, len);
+        else qsort(to + begin, len, sizeof(Element), compareElements);
+            
+        begin = end;
     }
 }
 
@@ -56,8 +88,6 @@ int main()
 {
     freopen("input.txt", "r", stdin);
     freopen("output.txt", "w", stdout);
-
-    for (int i = 0; i < MAX_ELEMENTS; ++i) arr[i] = &elements[i];
 
     int testsCount;
     scanf("%d", &testsCount);
@@ -70,18 +100,25 @@ int main()
         for (int stateI = 0; stateI < 2; ++stateI)
             scanf("%16" SCNx64, &state[stateI]);
 
-        for (int i = 0; i < arrSize; ++i) {
-            arr[i]->value = i;
-            arr[i]->key = 0;
-        }
+        Element *current = elements;
+        Element *buffer = output;
+
+        for (int i = 0; i < arrSize; ++i) current[i].value = i;
 
         for (int round = 0; round < rounds; ++round) {
-            for (int i = 0; i < arrSize; ++i) arr[i]->key = xorshift128plus(state) & 0x3fffffffffffffffLL;
-            sortArrayByKeys(arr, arrSize);
+            for (int i = 0; i < arrSize; ++i) current[i].key = xorshift128plus(state) & 0x3fffffffffffffffLL;
+            if (arrSize <= THRESHOLD) insertSortArrayByKeys(current, arrSize);
+            else {
+                sortArrayByKeys(current, buffer, arrSize);
+
+                Element *temp = current;
+                current = buffer;
+                buffer = temp;
+            }
         }
 
         uint64_t hash = 5381;
-        for (int i = 0; i < arrSize; i++) hash = hash * (uint64_t)31 + (uint64_t)arr[i]->value;
+        for (int i = 0; i < arrSize; i++) hash = hash * (uint64_t)31 + (uint64_t)current[i].value;
         printf("%016" PRIx64 "\n", hash);
     }
 
