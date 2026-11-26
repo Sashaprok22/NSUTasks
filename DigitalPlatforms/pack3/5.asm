@@ -15,7 +15,7 @@ ld r1, r1
 
 or r1, r0
 
-ldi r1, 0b00000001
+ldi r1, 0b00000010
 or r1, r0
 
 ldi r1, res
